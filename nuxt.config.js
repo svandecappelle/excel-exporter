@@ -77,6 +77,10 @@ export default {
     },
   },
 
+  router: {
+    base: '/excel-exporter/',
+  },
+
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {},
 }
