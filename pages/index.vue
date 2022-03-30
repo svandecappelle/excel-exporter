@@ -40,16 +40,15 @@
           <v-carousel-item>
             <v-card-text class="marged-card">
               <h2>Options</h2>
-              <v-textarea
-                name="input-7-1"
-                label="Options in JSON format"
+              <v-jsoneditor
                 v-model="options"
-                max-width="100%"
-                rows="10"
-                class="mx-auto"
-                hint="Mapping"
+                :options="editorOptions"
+                :plus="false"
+                :height="'400px'"
+                @error="onError"
                 @change="onEdit('options', options)"
-              ></v-textarea>
+              >
+              </v-jsoneditor>
             </v-card-text>
           </v-carousel-item>
         </v-carousel>
@@ -71,21 +70,46 @@
 }
 </style>
 
+<!-- {"map":{"twoi":"name"}}-->
+
 <script>
 export default {
   name: 'IndexPage',
+  data() {
+    let opts = {}
+    try {
+      opts = JSON.parse(localStorage.options)
+    } catch {
+      opts = {}
+    }
+    return {
+      sticky: true,
+      value: localStorage.value,
+      options: opts,
+      key: localStorage.subKey,
+      editorOptions: {
+        mode: 'code',
+        onChange: this.onOptionsChanges,
+      },
+    }
+  },
   methods: {
-    onEdit(item, value) {
-      localStorage.setItem(item, value)
+    onOptionsChanges() {
+      this.onEdit('options', this.$data.options)
     },
-
+    onEdit(item, value) {
+      // console.log("edit", item, value);
+      localStorage.setItem(item, JSON.stringify(value))
+    },
+    onError(error) {
+      console.error(error)
+    },
     onExport() {
       const subKey = this.$data.key
       const data = JSON.parse(this.$data.value)
       let items = subKey.length > 0 ? data[subKey] : data
       if (this.$data.options) {
-        console.log(this.$data.options)
-        const options = JSON.parse(this.$data.options)
+        const options = this.$data.options
         if (options.map) {
           for (const [key, value] of Object.entries(options.map)) {
             console.log(`${key}: ${value}`)
@@ -105,13 +129,16 @@ export default {
     },
   },
 
-  async asyncData({ app: { $exporter } }) {
+  /*async asyncData({ app: { $exporter } }) {
     return {
       sticky: true,
       value: localStorage.value,
       options: localStorage.options,
       key: localStorage.subKey,
+      editorOptions: {
+        onChange: onEdit
+      }
     }
-  },
+  },*/
 }
 </script>
