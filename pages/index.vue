@@ -2,19 +2,18 @@
   <v-row justify="center" align="center">
     <v-col cols="12" sm="8" md="12">
       <v-card>
-        <v-system-bar></v-system-bar>
+        <v-system-bar>Exporting something to excel file</v-system-bar>
         <v-toolbar flat>
-          <v-toolbar-title>Exporting something to excel file</v-toolbar-title>
           <v-spacer></v-spacer>
           <div>
             <v-switch
-              v-model="sticky"
-              label="Sticky Banner"
+              v-model="preview"
+              label="Preview datas"
               hide-details
             ></v-switch>
           </div>
         </v-toolbar>
-        <v-banner single-line :sticky="sticky"> </v-banner>
+        <v-banner single-line :sticky="true"> </v-banner>
 
         <v-carousel>
           <v-carousel-item>
@@ -59,14 +58,40 @@
           </v-btn>
         </v-card-actions>
       </v-card>
+
+      <div class="v-marge"></div>
+      <v-card>
+        <v-system-bar>Here is a preview of the generated file</v-system-bar>
+        <template v-if="preview">
+          <v-simple-table>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th v-for="c in columns" :key="c" class="text-left">
+                    {{ c }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody let-value="">
+                <tr v-for="item in valueToExport.slice(0, 10)" :key="item">
+                  <td v-for="c in columns" :key="c">{{ item[c] }}</td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+        </template>
+      </v-card>
     </v-col>
   </v-row>
 </template>
 
 <style scoped>
 .marged-card {
-  margin: 00px 50px;
+  margin: 0px 50px;
   width: calc(100% - 100px);
+}
+.v-marge {
+  margin-top: 20px;
 }
 </style>
 
@@ -82,11 +107,21 @@ export default {
     } catch {
       opts = {}
     }
+    const dataInObject = localStorage.value
+      ? JSON.parse(localStorage.value)
+      : []
+    let valueToExport = localStorage.subKey
+      ? dataInObject[localStorage.subKey]
+      : dataInObject
+    valueToExport = this.toExport(valueToExport, opts)
+    const firstElement = valueToExport ? valueToExport[0] : undefined
     return {
-      sticky: true,
+      preview: true,
       value: localStorage.value,
       options: opts,
       key: localStorage.subKey,
+      columns: firstElement ? Object.keys(firstElement) : [],
+      valueToExport,
       editorOptions: {
         mode: 'code',
         onChange: this.onOptionsChanges,
@@ -94,6 +129,17 @@ export default {
     }
   },
   methods: {
+    toExport(items, options) {
+      if (options.map) {
+        for (const [key, value] of Object.entries(options.map)) {
+          console.log(`${key}: ${value}`)
+          items.forEach((i) => {
+            i[key] = i[key][value]
+          })
+        }
+      }
+      return items
+    },
     onOptionsChanges() {
       this.onEdit('options', this.$data.options)
     },
@@ -107,18 +153,10 @@ export default {
     onExport() {
       const subKey = this.$data.key
       const data = JSON.parse(this.$data.value)
-      let items = subKey.length > 0 ? data[subKey] : data
-      if (this.$data.options) {
-        const options = this.$data.options
-        if (options.map) {
-          for (const [key, value] of Object.entries(options.map)) {
-            console.log(`${key}: ${value}`)
-            items.forEach((i) => {
-              i[key] = i[key][value]
-            })
-          }
-        }
-      }
+      let items = this.toExport(
+        subKey.length > 0 ? data[subKey] : data,
+        this.$data.options
+      )
       const columns = Object.keys(items[0]).map((k) => {
         return { name: k, key: k, width: 22, filterButton: true }
       })
@@ -128,17 +166,5 @@ export default {
       })
     },
   },
-
-  /*async asyncData({ app: { $exporter } }) {
-    return {
-      sticky: true,
-      value: localStorage.value,
-      options: localStorage.options,
-      key: localStorage.subKey,
-      editorOptions: {
-        onChange: onEdit
-      }
-    }
-  },*/
 }
 </script>
