@@ -62,6 +62,12 @@
   </v-app>
 </template>
 
+<style scoped src="@/assets/json-editor.darktheme.css"></style>
+
+<style scoped>
+@import '~/assets/json-editor.darktheme.css';
+</style>
+
 <script>
 export default {
   name: 'DefaultLayout',
