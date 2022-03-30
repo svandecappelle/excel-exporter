@@ -24,9 +24,9 @@
     "vue": "^3.2.31",
     "vue-json-excel": "^0.3.0",
     "vue-lodash": "^2.1.2",
-    "vue-server-renderer": "^2.6.14",
-    "vue-template-compiler": "^2.6.14",
-    "vuetify": "^2.6.1",
+    "vue-server-renderer": "^3.2.31",
+    "vue-template-compiler": "^3.2.31",
+    "vuetify": "^2.6.4",
     "webpack": "^4.46.0"
   },
   "devDependencies": {
