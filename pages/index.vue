@@ -18,16 +18,14 @@
         <v-carousel>
           <v-carousel-item>
             <v-card-text class="marged-card">
-              <v-textarea
-                name="input-7-1"
-                label="Your JSON here"
+              <v-jsoneditor
                 v-model="value"
-                max-width="100%"
-                rows="10"
-                class="mx-auto"
-                hint="Hint text"
-                @change="onEdit('value', value)"
-              ></v-textarea>
+                :options="editorOptions('value', value)"
+                :plus="false"
+                :height="'350px'"
+                @error="onError"
+              >
+              </v-jsoneditor>
               <v-text-field
                 label="Sub item of object"
                 v-model="key"
@@ -41,7 +39,7 @@
               <h2>Options</h2>
               <v-jsoneditor
                 v-model="options"
-                :options="editorOptions"
+                :options="editorOptions('options', options)"
                 :plus="false"
                 :height="'400px'"
                 @error="onError"
@@ -110,41 +108,51 @@ export default {
     const dataInObject = localStorage.value
       ? JSON.parse(localStorage.value)
       : []
-    let valueToExport = localStorage.subKey
-      ? dataInObject[localStorage.subKey]
-      : dataInObject
+    const key = localStorage.subKey
+      ? JSON.parse(localStorage.subKey)
+      : undefined
+
+    let valueToExport = key ? dataInObject[key] : dataInObject
+
     valueToExport = this.toExport(valueToExport, opts)
     const firstElement = valueToExport ? valueToExport[0] : undefined
     return {
       preview: true,
-      value: localStorage.value,
+      value: dataInObject,
       options: opts,
-      key: localStorage.subKey,
+      key,
       columns: firstElement ? Object.keys(firstElement) : [],
       valueToExport,
-      editorOptions: {
-        mode: 'code',
-        onChange: this.onOptionsChanges,
-      },
     }
   },
   methods: {
+    editorOptions(item, value) {
+      const changeHandler = {
+        options: this.onOptionsChanges,
+        value: this.onValueChanges,
+      }
+      return {
+        mode: 'code',
+        onChange: changeHandler[item],
+      }
+    },
     toExport(items, options) {
-      if (options.map) {
+      if (items && options.map) {
         for (const [key, value] of Object.entries(options.map)) {
-          console.log(`${key}: ${value}`)
           items.forEach((i) => {
             i[key] = i[key][value]
           })
         }
       }
-      return items
+      return items ? items : []
     },
     onOptionsChanges() {
       this.onEdit('options', this.$data.options)
     },
+    onValueChanges() {
+      this.onEdit('value', this.$data.value)
+    },
     onEdit(item, value) {
-      // console.log("edit", item, value);
       localStorage.setItem(item, JSON.stringify(value))
     },
     onError(error) {
@@ -152,18 +160,22 @@ export default {
     },
     onExport() {
       const subKey = this.$data.key
-      const data = JSON.parse(this.$data.value)
+      const data = this.$data.value
       let items = this.toExport(
         subKey.length > 0 ? data[subKey] : data,
         this.$data.options
       )
-      const columns = Object.keys(items[0]).map((k) => {
-        return { name: k, key: k, width: 22, filterButton: true }
-      })
-      this.$exporter(items, {
-        fileName: 'exports',
-        columns,
-      })
+      let columns = []
+      if (items.length > 0) {
+        columns = Object.keys(items[0]).map((k) => {
+          return { name: k, key: k, width: 22, filterButton: true }
+        })
+
+        this.$exporter(items, {
+          fileName: 'exports',
+          columns,
+        })
+      }
     },
   },
 }
